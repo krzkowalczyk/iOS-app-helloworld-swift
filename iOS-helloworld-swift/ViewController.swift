@@ -63,31 +63,17 @@ class ViewController: UIViewController {
             return;
         }
         var motionDnaPredictionString = "Predictions (BETA):\n"
-        var classifierArray: [String] = [String]()
-        for (classifierName, _) in classifiers {
-            classifierArray.append(classifierName)
-        }
-        classifierArray.sort()
-        for classifierName in classifierArray {
-            guard let classifier = classifiers[classifierName] else {
-                return
-            }
-            
+        
+        for (classifierName, classifier) in classifiers {
             motionDnaPredictionString.append(String(format: "Classifier: %@\n", classifierName))
             motionDnaPredictionString.append(String(format: "\t prediction: %@ confidence: %.2f\n", classifier.currentPredictionLabel,classifier.currentPredictionConfidence))
-            var predictionStatsArray = [String]()
-            for (predictionLabel, _) in classifier.predictionStats {
-                predictionStatsArray.append(predictionLabel)
-            }
-            predictionStatsArray.sort()
-            for predictionLabel in predictionStatsArray {
-                guard let predictionStats = classifier.predictionStats[predictionLabel] else { return }
+                
+            for (predictionLabel, predictionStats) in classifier.predictionStats {
                 motionDnaPredictionString.append(String(format: "\t%@\n", predictionLabel))
                 motionDnaPredictionString.append(String(format: "\t duration: %.2f\n", predictionStats.duration))
                 motionDnaPredictionString.append(String(format: "\t distance: %.2f\n", predictionStats.distance))
             }
             motionDnaPredictionString.append("\n")
-
         }
         
         let motionDnaString = String(format:"MotionDna Location:\n%@\n%@\n%@\n%@\n%@",motionDnaLocalString,
@@ -95,9 +81,8 @@ class ViewController: UIViewController {
                                      motionDnaGlobalString,
                                      motionDnaMotionTypeString,
                                      motionDnaPredictionString)
-
         DispatchQueue.main.async {
-            self.receiveMotionDnaTextField.text =   MotionDnaSDK.checkVersion() + "\n" + motionDnaString
+            self.receiveMotionDnaTextField.text = motionDnaString
         }
     }
 
