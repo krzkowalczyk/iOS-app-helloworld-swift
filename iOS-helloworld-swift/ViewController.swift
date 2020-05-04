@@ -130,7 +130,7 @@ class ViewController: UIViewController {
         //    the SDK to function. IF the key has expired or there are other errors, you may receive
         //    those errors through the reportError() callback route.
         
-        manager.runMotionDna("<developer-key>")
+        manager.runMotionDna("4e7485cfe0c552a50112f33c573dca8c4e174786a59a6e407a589aa6d1d71d7a")
 
         //    Use our internal algorithm to automatically compute your location and heading by fusing
         //    inertial estimation with global location information. This is designed for outdoor use and
@@ -170,8 +170,17 @@ class ViewController: UIViewController {
         //    fast our SDK can provide results, but usually setting a slower update rate improves results.
         //    Setting the rate to 0ms will output estimation results at our maximum rate.
 
+//        manager.setCallbackUpdateRateInMs(500)
+        var configuration = [String:Any]()
+        configuration["model"] = "standard"
+        manager.run(withDeveloperKey: "<developer-key>", andConfigurations: configuration)
         manager.setCallbackUpdateRateInMs(500)
-
+        manager.setExternalPositioningState(HIGH_ACCURACY)
+        manager.setCartesianPositionX(4, y: 9)
+        manager.setCartesianOffsetInMetersX(3, y: 4)
+        manager.recordObservation(withIdentifier: 38, andUncertainty: 3.0)
+        
+        manager.setLocationLatitude(<#T##latitude: Double##Double#>, longitude: <#T##Double#>, andHeadingInDegrees: <#T##Double#>)
         //    When setLocationNavisens is enabled and setBackpropagationEnabled is called, once Navisens
         //    has initialized you will not only get the current position, but also a set of latitude
         //    longitude coordinates which lead back to the start position (where the SDK/App was started).
