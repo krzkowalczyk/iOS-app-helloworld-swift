@@ -29,8 +29,8 @@ struct MotionData {
     var motionType:MotionType
 }
 
-class ViewController: UIViewController {
-    var manager = MotionDnaManager()
+class ViewController: UIViewController, MotionDnaSDKDelegate {
+    var motionDnaSDK : MotionDnaSDK!
     
     @IBOutlet weak var receiveMotionDnaTextField: UITextView!
     @IBOutlet weak var receiveNetworkDataTextField: UITextView!
@@ -48,7 +48,7 @@ class ViewController: UIViewController {
         // Dispose of any resources that can be recreated.
     }
 
-    func receive(_ motionDna: MotionDna!) {
+    func receive(_ motionDna: MotionDna) {
         let location = motionDna.getLocation()
         let localLocation = location.localLocation
         let globalLocation = location.globalLocation
@@ -63,12 +63,28 @@ class ViewController: UIViewController {
             return;
         }
         var motionDnaPredictionString = "Predictions (BETA):\n"
+        var classifierNames = [String]()
+        for (classifierName, _) in classifiers {
+            classifierNames.append(classifierName);
+        }
+        classifierNames.sort()
         
-        for (classifierName, classifier) in classifiers {
+        for classifierName in classifierNames {
+            guard let classifier = classifiers[classifierName] else {
+                break;
+            }
             motionDnaPredictionString.append(String(format: "Classifier: %@\n", classifierName))
             motionDnaPredictionString.append(String(format: "\t prediction: %@ confidence: %.2f\n", classifier.currentPredictionLabel,classifier.currentPredictionConfidence))
-                
-            for (predictionLabel, predictionStats) in classifier.predictionStats {
+            
+            var predictionLabels = [String]()
+            for (predictionLabel, _) in classifier.predictionStats {
+                predictionLabels.append(predictionLabel);
+            }
+            predictionLabels.sort()
+            for predictionLabel in predictionLabels {
+                guard let predictionStats = classifier.predictionStats[predictionLabel] else {
+                    break;
+                }
                 motionDnaPredictionString.append(String(format: "\t%@\n", predictionLabel))
                 motionDnaPredictionString.append(String(format: "\t duration: %.2f\n", predictionStats.duration))
                 motionDnaPredictionString.append(String(format: "\t distance: %.2f\n", predictionStats.distance))
@@ -76,7 +92,7 @@ class ViewController: UIViewController {
             motionDnaPredictionString.append("\n")
         }
         
-        let motionDnaString = String(format:"MotionDna Location:\n%@\n%@\n%@\n%@\n%@",motionDnaLocalString,
+        let motionDnaString = String(format:"%@\n MotionDna Location:\n%@\n%@\n%@\n%@\n%@",MotionDnaSDK.checkVersion(),motionDnaLocalString,
                                      motionDnaHeadingString,
                                      motionDnaGlobalString,
                                      motionDnaMotionTypeString,
@@ -86,7 +102,7 @@ class ViewController: UIViewController {
         }
     }
 
-    func receiveNetworkData(_ motionDna: MotionDna!) {
+    func receiveNetworkData(_ motionDna: MotionDna) {
         let motionData = MotionData(id: motionDna.getID(),
                                     deviceName: motionDna.getDeviceName(),
                                     location: motionDna.getLocation(),
@@ -118,14 +134,41 @@ class ViewController: UIViewController {
         }
     }
 
-    func receiveNetworkData(_ opcode: NetworkCode, withPayload payload: [AnyHashable : Any]!) {
+    func receiveNetworkData(_ opcode: NetworkCode, withPayload payload: [AnyHashable : Any]) {
 
     }
 
+
+    func report(_ status: MotionDnaSDKStatus, withMessage message: String?) {
+        guard let message = message else {
+            return
+        }
+        switch status {
+        case .sensorTimingIssue:
+            print("Error: Sensor Timing "  + message)
+        case .authenticationFailure:
+            print("Error: Authentication Failed " + message)
+        case .missingSensor:
+            print("Error: Sensor Missing " + message)
+        case .expiredSDK:
+            print("Error: SDK Expired " + message)
+        case .floorError:
+            print("Error: Floor Error " + message)
+        case .authenticationSuccess:
+            print("Status Authenticated: " + message)
+        case .permissionsIssue:
+            print("Status Permissions: " + message)
+        case .none:
+            print("Status None: " + message)
+        default:
+            print("Error Unknown: " + message)
+        }
+    }
+    
+
     func startMotionDna() {
-
-        manager.receiver = self;
-
+        motionDnaSDK = MotionDnaSDK(delegate: self)
+        
         //    This functions starts up the SDK. You must pass in a valid developer's key in order for
         //    the SDK to function. IF the key has expired or there are other errors, you may receive
         //    those errors through the reportError() callback route.
@@ -138,39 +181,39 @@ class ViewController: UIViewController {
         //    outdoors. Depending on the quality of the global location, this may only require as little
         //    as 10 meters of walking outdoors.
 
-        manager.setLocationNavisens()
+        motionDnaSDK.setLocationNavisens()
 
         //   Set accuracy for GPS positioning, states :HIGH/LOW_ACCURACY/OFF, OFF consumes
         //   the least battery.
 
-        manager.setExternalPositioningState(LOW_ACCURACY)
+        motionDnaSDK.setExternalPositioningState(LOW_ACCURACY)
 
         //    Manually sets the global latitude, longitude, and heading. This enables receiving a
         //    latitude and longitude instead of cartesian coordinates. Use this if you have other
         //    sources of information (for example, user-defined address), and need readings more
         //    accurate than GPS can provide.
-//        manager.setLocationLatitude(37.787582, longitude: -122.396627, andHeadingInDegrees: 0.0)
+//        motionDnaSDK.setLocationLatitude(37.787582, longitude: -122.396627, andHeadingInDegrees: 0.0)
 
         //    Set the power consumption mode to trade off accuracy of predictions for power saving.
 
-        manager.setPowerMode(PERFORMANCE)
+        motionDnaSDK.setPowerMode(PERFORMANCE)
 
         //    Connect to your own server and specify a room. Any other device connected to the same room
         //    and also under the same developer will receive any udp packets this device sends.
 
-        manager.startUDP()
+        motionDnaSDK.startUDP()
 
         //    Allow our SDK to record data and use it to enhance our estimation system.
         //    Send this file to support@navisens.com if you have any issues with the estimation
         //    that you would like to have us analyze.
 
-        manager.setBinaryFileLoggingEnabled(true)
+        motionDnaSDK.setBinaryFileLoggingEnabled(true)
 
         //    Tell our SDK how often to provide estimation results. Note that there is a limit on how
         //    fast our SDK can provide results, but usually setting a slower update rate improves results.
         //    Setting the rate to 0ms will output estimation results at our maximum rate.
 
-//        manager.setCallbackUpdateRateInMs(500)
+//        motionDnaSDK.setCallbackUpdateRateInMs(500)
         
         //    When setLocationNavisens is enabled and setBackpropagationEnabled is called, once Navisens
         //    has initialized you will not only get the current position, but also a set of latitude
@@ -179,17 +222,17 @@ class ViewController: UIViewController {
         //    person started, or where the person exited a vehicle (e.g. the vehicle parking spot or the
         //    location of a drop-off).
 
-        manager.setBackpropagationEnabled(true)
+        motionDnaSDK.setBackpropagationEnabled(true)
 
         //    If the user wants to see everything that happened before Navisens found an initial
         //    position, he can adjust the amount of the trajectory to see before the initial
         //    position was set automatically.
 
-        manager.setBackpropagationBufferSize(2000)
+        motionDnaSDK.setBackpropagationBufferSize(2000)
 
         //    Enables AR mode. AR mode publishes orientation quaternion at a higher rate.
 
-//        manager.setARModeEnabled(true)
+//        motionDnaSDK.setARModeEnabled(true)
     }
 }
 
