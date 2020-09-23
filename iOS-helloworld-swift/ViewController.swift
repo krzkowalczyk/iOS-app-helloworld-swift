@@ -27,7 +27,7 @@ class ViewController: UIViewController, MotionDnaSDKDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        startMotionDna();
+        startDemo();
     }
     
     override func didReceiveMemoryWarning() {
@@ -118,7 +118,7 @@ class ViewController: UIViewController, MotionDnaSDKDelegate {
     
 
     
-    func startMotionDna() {
+    func startDemo() {
         motionDnaSDK = MotionDnaSDK(delegate: self)
         let developerKey = "<--DEVELOPER-KEY-HERE-->"
         motionDnaSDK.start(withDeveloperKey: developerKey)
