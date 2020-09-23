@@ -20,10 +20,6 @@ class ViewController: UIViewController, MotionDnaSDKDelegate {
     var motionDnaSDK : MotionDnaSDK!
     
     @IBOutlet weak var receiveMotionDnaTextField: UITextView!
-    @IBOutlet weak var receiveNetworkDataTextField: UITextView!
-    
-    var networkUsers:[String:MotionData] = [:]
-    var networkUsersTimestamps:[String:Double] = [:]
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -34,8 +30,6 @@ class ViewController: UIViewController, MotionDnaSDKDelegate {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
-    
-    
 
     func receive(motionDna: MotionDna) {
         
