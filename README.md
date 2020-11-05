@@ -1,7 +1,7 @@
 # iOS App Hello World (swift)
 An example Swift iOS project using the Navisens MotionDNA SDK
 
-___Note: This app is designed to run on iOS 9.1 or higher___
+___Note: This app is designed to run on iOS 12.0 or higher___
 
 run ```pod install``` from the project folder to install necessary dependencies
 
@@ -35,26 +35,23 @@ Add `pod 'MotionDnaSDK` to your podfile and run `pod install` to load the SDK. I
 
 ### How you get your [estimated] position
 
-In our SDK we provide `MotionDnaSDK` class which you subclass and override. In order to receive estimated positiona and other data, you need to override the key methods listed below.
+In our SDK we provide `MotionDnaSDKDelegate` class which you implment in your viewcontroller or other class and and implement the required deegate methods.
 
 ``` Swift
 class MotionDnaManager: MotionDnaSDK {
-  override func receive(_ motionDna: MotionDna!) {}
-  override func receiveNetworkData(_ networkCode: NetworkCode, withPayload map: Dictionary<>) {}
-  override func receiveNetworkData(_ motionDna: MotionDna) {}
-  override func failure(toAuthenticate msg: String!) {}
-  override func reportSensorTiming(_ dt: Double, msg: String!) {}
+  override func receive(motionDna: MotionDna) {}
+  override func report(status: MotionDnaSDK.Status, message: String) {}
 }
 ```
 
-The ``` receive(_ motionDna: MotionDna!) ``` callback method returns a MotionDna estimation object containing [location, heading and motion type](https://github.com/navisens/NaviDocs/blob/master/API.iOS.md#getters) among many other interesting data on a users current state. Here is how we might print it out.
+The ``` receive(motionDna: MotionDna) ``` callback method returns a MotionDna estimation object containing [location, heading and motion type](https://github.com/navisens/NaviDocs/blob/master/API.iOS.md#getters) among many other interesting data on a users current state. Here is how we might print it out.
 
 ``` swift
   override func receive(_ motionDna: MotionDna!) {
-    NSLog("%.8f %.8f %.8f %.8f\n",  motionDna.getLocation().heading,
-                                    motionDna.getLocation().localLocation.x,
-                                    motionDna.getLocation().localLocation.y,
-                                    motionDna.getLocation().localLocation.z)
+    NSLog("%.8f %.8f %.8f %.8f\n",  motionDna.location.cartesian.heading,
+                                    motionDna.location.cartesian.x,
+                                    motionDna.location.cartesian.y,
+                                    motionDna.location.cartesian.z)
   }
 ```
 
@@ -63,17 +60,17 @@ The ``` receive(_ motionDna: MotionDna!) ``` callback method returns a MotionDna
 Add the subclassed MotionDnaSDK as a property of your View Controller
 
 ``` Swift
-var manager = MotionDnaManager()
+var manager = MotionDnaSDK()
 ```
 
 ``` Swift
-manager.runMotionDna("<developer-key>")
+manager.start("<developer-key>")
 ```
 
 ## Common Configurations (with code examples)
 ### Startup
 ``` Swift
-manager runMotionDna:@"<ENTER YOUR DEV KEY HERE>"];
+manager.start(withDeveloperKey:"<developer-key>")
 ```
 ### Startup with Configuration (Model Selection)
 Additional configuration options will be added over time. Current configuration options are only for model seletion in motion estimation. Currently supported models are "standard", "headmount", and "chestmount".
@@ -81,29 +78,18 @@ Additional configuration options will be added over time. Current configuration 
 ``` Swift
 var configuration = [String:Any]()
 configuration["model"] = "standard"
-manager.run(withDeveloperKey: "<developer-key>", andConfigurations: configuration)
+manager.start(withDeveloperKey: "<developer-key>", configurations: configuration)
 ```
 
 ### Setting SDK Options
 #### Common Task:
-You only require an update of a users position every half a second and would like a user's position in the global frame (latitude and longitude) to be as accuracte as possible
-```Swift
-manager.setCallbackUpdateRateInMs(500)
-manager.setExternalPositioningState(HIGH_ACCURACY)
-```
-These should alway be called after the runWithDeveloperKey:andConfigurations: or runMotionDna: method has been called
-
--------------
 
 ### _Assigning initial position Locally (Cartesian X and Y coordinates)_
 #### Common Tasks:
 You know that a users position should be shifted by 4 meters in the X direction and 9 in the Y direction. Heading should not change. If the current estimated position is (4,3) the updated position should be (8,12)
 
-``` manager.setCartesianPositionX(4, y: 9) ```
+``` manager.setCartesianPosition(x:4, y: 9) ```
 
-You wish to update your X and Y positions to 3 in the X and 4 meters in the Y direction. Heading should not be affected
-
-``` manager.setCartesianOffsetInMetersX(3, y: 4) ```
 
 -------------
 
@@ -112,15 +98,11 @@ You wish to update your X and Y positions to 3 in the X and 4 meters in the Y di
 #### Common Tasks:
  You need to update the latitude and longitude to (37.756581, -122.419155). Heading can be taken from the device's compass
 
-``` manager.setLocationLatitude(37.756581, longitude:-122.419155) ```
+``` manager.setGlobalPosition(37.756581, longitude:-122.419155) ```
 
  You know the users location is latitude and longitude of (37.756581, -122.419155) with a heading of 3 degrees and need to indicate that to the SDK
 
-``` manager.setLocationLatitude(37.756581, longitude:-122.419155, andHeadingInDegrees:3.0) ```
-
-You have a use case that will be outside often and wish to have the SDK determine a users latitude, longitude and heading automatically
-
-``` manager.setLocationNavisens() ```
+``` manager.setGlobalPositionAndHeading(37.756581, longitude:-122.419155, heading:3.0) ```
 
 ------------
 
@@ -128,7 +110,7 @@ You have a use case that will be outside often and wish to have the SDK determin
 #### Common Task:
 A user is indoors and revisits the same areas frequently. Through some outside mechanism the developer is aware of a return to certain landmarks and would like to indicate that the user has returned to a landmark with ID of 38 to aid in the estimation of a user's position. The developer also knows that this observation was made within 3 meters of the landmark 38
 
-``` manager.recordObservation(withIdentifier: 38, andUncertainty: 3.0) ```
+``` manager.recordObservation(withIdentifier: 38, uncertainty: 3.0) ```
 
 
 ## Additional configuration options are described in the project source and our [iOS Documentation](https://github.com/navisens/NaviDocs/blob/master/API.iOS.md).
