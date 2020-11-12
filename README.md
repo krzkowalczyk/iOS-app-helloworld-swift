@@ -44,7 +44,7 @@ class MotionDnaManager: MotionDnaSDK {
 }
 ```
 
-The ``` receive(motionDna: MotionDna) ``` callback method returns a MotionDna estimation object containing [location, heading and motion type](https://github.com/navisens/NaviDocs/blob/master/API.iOS.md#getters) among many other interesting data on a users current state. Here is how we might print it out.
+The ``` receive(motionDna: MotionDna) ``` callback method returns a MotionDna estimation object containing [location, heading and motion classification](https://github.com/navisens/NaviDocs/blob/master/API.iOS.md#estimation-properties) among many other interesting data on a users current state. Here is how we might print it out.
 
 ``` swift
   override func receive(_ motionDna: MotionDna!) {
